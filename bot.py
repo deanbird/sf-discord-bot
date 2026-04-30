@@ -21,13 +21,13 @@ SEEN_FILE = os.getenv("SEEN_FILE", "seen_products.json")
 def load_seen():
     if os.path.exists(SEEN_FILE):
         with open(SEEN_FILE, "r") as f:
-            return set(json.load(f))
-    return set()
+            return json.load(f)
+    return {}
 
 
 def save_seen(seen):
     with open(SEEN_FILE, "w") as f:
-        json.dump(list(seen), f)
+        json.dump(seen, f)
 
 
 # -------------------------
@@ -134,12 +134,23 @@ def send_discord(new_items):
     if not new_items:
         return
 
+    embeds = []
+
     for item in new_items:
+
+        # Alert type logic (same as before)
+        if item.get("alert_type") == "restock":
+            description = "🔄 **Restocked!**"
+            color = 15105570
+        else:
+            description = "📦 **New In Stock!**"
+            color = 3066993
+
         embed = {
             "title": item["name"],
-            "url": item["link"],  # clickable title
-            "description": "📦 **In Stock!**",
-            "color": 5763719,  # blue color
+            "url": item["link"],
+            "description": description,
+            "color": color,
             "fields": [
                 {
                     "name": "💰 Price",
@@ -156,20 +167,22 @@ def send_discord(new_items):
                 "text": "Broken Binding Monitor"
             }
         }
-        
-        # Add thumbnail if available
+
+        # Add thumbnail if exists
         if item.get("image"):
             embed["thumbnail"] = {"url": item["image"]}
-            
+
+        embeds.append(embed)
+
+    # 🚨 Discord limit = 10 embeds per message
+    for i in range(0, len(embeds), 10):
+        chunk = embeds[i:i+10]
+
         try:
-            requests.post(
-                WEBHOOK_URL,
-                json={"embeds": [embed]}
-            )
-            time.sleep(0.4)  # avoid rate limits
+            requests.post(WEBHOOK_URL, json={"embeds": chunk})
+            time.sleep(0.5)
         except Exception as e:
             logger.error(f"Discord send failed: {e}")
-
 
 # -------------------------
 # Main loop
@@ -183,12 +196,27 @@ def run_bot():
         try:
             products = broken_binding_checks()
 
-            new_items = []
-            for p in products:
-                if p["in_stock"] and p["link"] not in seen:
-                    new_items.append(p)
-                    seen.add(p["link"])
-
+        new_items = []
+        
+        for p in products:
+            link = p["link"]
+            current_stock = p["in_stock"]
+        
+            previous_stock = seen.get(link)
+        
+            # Case 1: never seen before AND in stock
+            if previous_stock is None and current_stock:
+                p["alert_type"] = "new"
+                new_items.append(p)
+        
+            # Case 2: was out of stock → now in stock (RESTOCK)
+            elif previous_stock is False and current_stock:
+                p["alert_type"] = "restock"
+                new_items.append(p)
+        
+            # Update state
+            seen[link] = current_stock
+            
             if new_items:
                 logger.info(f"Found {len(new_items)} new items")
                 send_discord(new_items)
