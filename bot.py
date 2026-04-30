@@ -198,24 +198,24 @@ def run_bot():
 
             new_items = []
         
-        for p in products:
-            link = p["link"]
-            current_stock = p["in_stock"]
+            for p in products:
+                link = p["link"]
+                current_stock = p["in_stock"]
         
-            previous_stock = seen.get(link)
+                previous_stock = seen.get(link)
         
             # Case 1: never seen before AND in stock
-            if previous_stock is None and current_stock:
-                p["alert_type"] = "new"
-                new_items.append(p)
+                if previous_stock is None and current_stock:
+                    p["alert_type"] = "new"
+                    new_items.append(p)
         
             # Case 2: was out of stock → now in stock (RESTOCK)
-            elif previous_stock is False and current_stock:
-                p["alert_type"] = "restock"
-                new_items.append(p)
+                elif previous_stock is False and current_stock:
+                    p["alert_type"] = "restock"
+                    new_items.append(p)
         
             # Update state
-            seen[link] = current_stock
+                seen[link] = current_stock
             
             if new_items:
                 logger.info(f"Found {len(new_items)} new items")
