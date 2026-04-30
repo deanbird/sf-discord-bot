@@ -118,7 +118,7 @@ def broken_binding_checks():
                         "price": price,
                         "store": store,
                         "link": link,
-                        "in_stock": in_stock
+                        "in_stock": in_stock,
                         "image": image_url
                     })
 
