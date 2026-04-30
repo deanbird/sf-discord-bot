@@ -128,15 +128,34 @@ def send_discord(new_items):
         return
 
     for item in new_items:
-        message = (
-            f"🚨 **{item['name']}**\n"
-            f"💰 {item['price']}\n"
-            f"🏪 {item['store']}\n"
-            f"🔗 {item['link']}"
-        )
+        embed = {
+            "title": item["name"],
+            "url": item["link"],  # clickable title
+            "description": "📦 **In Stock!**",
+            "color": 5763719,  # blue color
+            "fields": [
+                {
+                    "name": "💰 Price",
+                    "value": item["price"],
+                    "inline": True
+                },
+                {
+                    "name": "🏪 Store",
+                    "value": item["store"],
+                    "inline": True
+                }
+            ],
+            "footer": {
+                "text": "Broken Binding Monitor"
+            }
+        }
 
         try:
-            requests.post(WEBHOOK_URL, json={"content": message})
+            requests.post(
+                WEBHOOK_URL,
+                json={"embeds": [embed]}
+            )
+            time.sleep(0.4)  # avoid rate limits
         except Exception as e:
             logger.error(f"Discord send failed: {e}")
 
