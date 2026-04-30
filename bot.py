@@ -98,6 +98,12 @@ def broken_binding_checks():
                         product_page = _get_with_retry(session, link)
                         psoup = BeautifulSoup(product_page.content, "html.parser")
 
+                        image_url = None
+
+                        meta_img = psoup.find("meta", property="og:image")
+                        if meta_img:
+                            image_url = meta_img.get("content")
+
                         cart_button = psoup.find("button", class_="product-form__submit")
                         in_stock = cart_button and "Sold out" not in cart_button.get_text()
 
@@ -113,6 +119,7 @@ def broken_binding_checks():
                         "store": store,
                         "link": link,
                         "in_stock": in_stock
+                        "image": image_url
                     })
 
                 page += 1
@@ -149,7 +156,11 @@ def send_discord(new_items):
                 "text": "Broken Binding Monitor"
             }
         }
-
+        
+        # Add thumbnail if available
+        if item.get("image"):
+            embed["thumbnail"] = {"url": item["image"]}
+            
         try:
             requests.post(
                 WEBHOOK_URL,
