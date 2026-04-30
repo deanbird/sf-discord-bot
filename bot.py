@@ -196,7 +196,7 @@ def run_bot():
         try:
             products = broken_binding_checks()
 
-        new_items = []
+            new_items = []
         
         for p in products:
             link = p["link"]
