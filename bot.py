@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+logger.info(f"WEBHOOK_URL loaded as: {WEBHOOK_URL}")
 CHECK_INTERVAL = 300  # seconds (300 = 5 minutes)
 
 SEEN_FILE = os.getenv("SEEN_FILE", "seen_products.json")
